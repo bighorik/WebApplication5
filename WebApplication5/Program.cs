@@ -1,13 +1,10 @@
-using System.Security.Claims;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.OpenApi.Models;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
+using Eventuous.EventStore;
+using Eventuous;
+using Minio;
+using System.Text.Json.Serialization;
+using System.Text.Json;
+using WebApplication5.Controllers;
+using WebApplication5.Events;
 
 namespace WebApplication5
 {
@@ -19,29 +16,18 @@ namespace WebApplication5
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddAuth(builder.Configuration);
-            builder.Services.AddSwaggerGen(options =>
-            {
-                options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-                {
-                    Type = SecuritySchemeType.Http,
-                    Scheme = "Bearer"
-                });
+            builder.Services.AddSwaggerGen();
 
-
-                options.AddSecurityRequirement(new OpenApiSecurityRequirement {
+            builder.Services.AddEventStoreClient("esdb://admin:changeit@localhost:2113?tls=false&tlsVerifyCert=false");
+            builder.Services.AddEventStore<EsdbEventStore>();
+            builder.Services.AddSingleton<IEventSerializer>(new DefaultEventSerializer(
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)
                 {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Id = "Bearer",
-                            Type = ReferenceType.SecurityScheme
-                        }
-                    },
-                    new List<string>()
-                } });
-            });
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                }));
+
+            builder.Services.AddCommandService<StudyCommandService, StudyState>();
+            TypeMap.RegisterKnownEventTypes(typeof(StudyCreatedEvent).Assembly);
 
             var app = builder.Build();
 
@@ -61,45 +47,4 @@ namespace WebApplication5
             app.Run();
         }
     }
-}
-
-
-
-public static class ServiceExtensions
-{
-    public static IServiceCollection AddAuth(this IServiceCollection services, IConfiguration configuration)
-    {
-        KeycloakSettings settings = configuration.GetSection("KeycloakSettings").Get<KeycloakSettings>()!;
-
-        services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-        }).AddJwtBearer(options =>
-        {
-            RSA rSA = RSA.Create();
-            rSA.ImportSubjectPublicKeyInfo(Convert.FromBase64String(settings.PublicKey), out var _);
-            RsaSecurityKey key = new(rSA);
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = settings.Issuer,
-                ValidateLifetime = true,
-                IssuerSigningKey = key,
-                ValidateIssuerSigningKey = false,
-                ValidateAudience = false,
-                ClockSkew = TimeSpan.Zero
-            };
-        });
-        return services;
-    }
-}
-
-public class KeycloakSettings
-{
-    public string? Issuer { get; set; }
-
-    public string? PublicKey { get; set; }
 }

@@ -1,98 +1,63 @@
-using System.Data;
-using System.Security.Claims;
-using System.Text.Json;
+using Eventuous;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
+using WebApplication5.Commands;
 
 namespace WebApplication5.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
-    public class WeatherForecastController(IConfiguration config) : ControllerBase
+    [Route("/api/study")]
+    public class WeatherForecastController(StudyCommandService service) : ControllerBase
     {
-        private static List<string> Summaries = [
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-        ];
 
-        [Authorize]
-        [HttpGet]
-        public List<string> Get()
+        //[HttpGet("id")]
+        //public async Task<Study> Get(Guid id)
+        //{
+        //}
+
+        [HttpPost]
+        public async Task Post(StudyDto dto)
         {
-            return Summaries;
+            CreateStudyCommand command = new CreateStudyCommand()
+            {
+                Id = Guid.NewGuid(),
+                Code = dto.Code,
+                Name = dto.Name,
+                Phase = dto.Phase,
+            };
+
+            await service.Handle(command, default);
         }
 
-        [Authorize("Admin")]
-        [Authorize("Moderator")]
-        [HttpDelete]
-        public List<string> Delete()
-        {
-            return Summaries;
-        }
+        //[HttpPut("id")]
+        //public async Task<Study> Put(Guid id, StudyDto dto)
+        //{
+        //}
 
-        [Authorize(["Admin", "Moderator"])]
-        [HttpPost("{id}")]
-        public void AddSummary([FromBody] SummaryDto dto, [FromRoute] Guid id)
-        {
-            Summaries.Add(dto.Name);
-        }
+        //[HttpDelete("id")]
+        //public async Task Delete(Guid id)
+        //{
+        //}
     }
 }
 
 
-public class SummaryDto
+public class Study
+{
+    public Guid Id { get; set; }
+
+    public string Name { get; set; }
+
+    public string Code { get; set; }
+
+    public string Phase { get; set; }
+}
+
+public class StudyDto
 {
     public string Name { get; set; }
+
+    public string Code { get; set; }
+
+    public string Phase { get; set; }
 }
 
-public static class ClaimsExtension
-{
-    public static List<string> GetClientRoles(this ClaimsPrincipal user, string clientName)
-    {
-        var json = user.FindFirst("resource_access")?.Value;
-        if (JsonDocument.Parse(json).RootElement.TryGetProperty(clientName, out var clientProp) &&
-            clientProp.TryGetProperty("roles", out var rolesProp))
-        {
-            return rolesProp.EnumerateArray()
-                           .Select(x => x.GetString() ?? "")
-                           .Where(x => x != "")
-                           .ToList();
-        }
-        else return [];
-    }
-}
-
-
-[AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
-public class AuthorizeAttribute(string[]? roles = null) : Attribute, IAsyncAuthorizationFilter
-{
-    public Task OnAuthorizationAsync(AuthorizationFilterContext context)
-    {
-        var a = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
-
-        if (!context.HttpContext.User.Identity?.IsAuthenticated ?? false)
-        {
-            throw new Exception("401 не авторизован");
-        }
-        var tokenRoles = context.HttpContext.User.GetClientRoles("account-console");
-        bool authed = false;
-        if (roles != null)
-        {
-            foreach (var tokenRole in tokenRoles)
-            {
-                if (roles.Contains(tokenRole))
-                    authed = true;
-            }
-            if (!authed)
-                throw new Exception("403 не имеет прав");
-        }
-
-        return Task.CompletedTask;
-
-        // user, moderator, admin
-
-        // get - user, moderator, admin
-        // post - user, moderator, admin
-        // delete - moderator, admin
-        // put - admin
-    }
-}
