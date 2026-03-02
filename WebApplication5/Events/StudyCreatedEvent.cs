@@ -5,6 +5,7 @@ namespace WebApplication5.Events
     [EventType(nameof(StudyCreatedEvent))]
     public class StudyCreatedEvent
     {
+        public Guid Id { get; set; }
         public string Name { get; set; }
 
         public string Code { get; set; }

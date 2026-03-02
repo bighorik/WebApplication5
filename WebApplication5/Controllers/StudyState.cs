@@ -6,6 +6,7 @@ namespace WebApplication5.Controllers
 {
     public record StudyState : State<StudyState>
     {
+        public Guid Id { get; set; }
         public string Name { get; set; } = default!;
 
         public string Code { get; set; } = default!;
@@ -18,6 +19,7 @@ namespace WebApplication5.Controllers
         {
             On<StudyCreatedEvent>((state, @event) =>
             {
+                state.Id = @event.Id;
                 state.Name = @event.Name;
                 state.Code = @event.Code;
                 state.Phase = @event.Phase;
@@ -28,7 +30,7 @@ namespace WebApplication5.Controllers
             On<StudyUpdatedEvent>((state, @event) =>
             {
                 state.Name = @event.Name ?? state.Name;
-                state.Phase = @event.Phase == null ? state.Phase : @event.Phase;
+                state.Phase = @event.Phase ?? state.Name;
 
                 return state;
             });
