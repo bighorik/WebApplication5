@@ -12,7 +12,7 @@ namespace WebApplication5.Controllers
         {
             On<CreateStudyCommand>()
                 .InState(ExpectedState.New)
-                .GetStream(command => new StreamName($"Study_{command.Id}"))
+                .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
                 {
                     StudyCreatedEvent @event = new StudyCreatedEvent()
@@ -28,7 +28,7 @@ namespace WebApplication5.Controllers
 
             On<UpdateStudyCommand>()
                 .InState(ExpectedState.Existing)
-                .GetStream(command => new StreamName($"Study_{command.Id}"))
+                .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
                 {
                     if (state.IsDeleted)
@@ -52,7 +52,7 @@ namespace WebApplication5.Controllers
 
             On<UpdateStudyCodeCommand>()
                 .InState(ExpectedState.Existing)
-                .GetStream(command => new StreamName($"Study_{command.Id}"))
+                .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
                 {
                     if (state.IsDeleted)
@@ -76,7 +76,7 @@ namespace WebApplication5.Controllers
 
             On<DeleteStudyCommand>()
                 .InState(ExpectedState.Existing)
-                .GetStream(command => new StreamName($"Study_{command.Id}"))
+                .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
                 {
                     if (state.IsDeleted)

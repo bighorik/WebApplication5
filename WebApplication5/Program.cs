@@ -5,6 +5,10 @@ using System.Text.Json.Serialization;
 using System.Text.Json;
 using WebApplication5.Controllers;
 using WebApplication5.Events;
+using FluentMigrator.Runner;
+using Eventuous.EventStore.Subscriptions;
+using Eventuous.Postgresql.Subscriptions;
+using WebApplication5.Projectors;
 
 namespace WebApplication5
 {
@@ -26,8 +30,29 @@ namespace WebApplication5
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 }));
 
+            builder.Services.AddNpgsqlDataSource("Host=localhost;Port=5432;Database=pg4;Username=postgres;Password=admin");
+            builder.Services.AddFluentMigratorCore()
+                .ConfigureRunner(rb => rb
+                    .AddPostgres()
+                    .WithGlobalConnectionString("Host=localhost;Port=5432;Database=pg4;Username=postgres;Password=admin")
+                    .ScanIn(typeof(Program).Assembly).For.Migrations());
+
+            builder.Services.AddOptions<PostgresCheckpointStoreOptions>().Configure(options => options.Schema = "public");
+            builder.Services.AddCheckpointStore<PostgresCheckpointStore>();
+
             builder.Services.AddCommandService<StudyCommandService, StudyState>();
             TypeMap.RegisterKnownEventTypes(typeof(StudyCreatedEvent).Assembly);
+
+            builder.Services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>("StudyProjectorSubscription",
+                builder => builder
+                .Configure(subscriptionOptions =>
+                {
+                    subscriptionOptions.StreamName = new StreamName("$ce-Study");
+                    subscriptionOptions.ResolveLinkTos = true;
+                })
+                .UseCheckpointStore<PostgresCheckpointStore>()
+                .AddEventHandler<StudyProjector>());
+
 
             var app = builder.Build();
 
@@ -43,6 +68,10 @@ namespace WebApplication5
 
 
             app.MapControllers();
+
+            using var scope = app.Services.CreateScope();
+            var runner = scope.ServiceProvider.GetRequiredService<IMigrationRunner>();
+            runner.MigrateUp();
 
             app.Run();
         }

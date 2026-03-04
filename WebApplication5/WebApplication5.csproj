@@ -18,6 +18,8 @@
 		<PackageReference Include="Eventuous.Gateway" Version="0.15.1" />
 		<PackageReference Include="Eventuous.Postgresql" Version="0.15.1" />
 		<PackageReference Include="Eventuous.Kafka" Version="0.15.1" />
+
+		<PackageReference Include="FluentMigrator.Runner.Postgres" Version="8.0.1" />
 	</ItemGroup>
 
 </Project>

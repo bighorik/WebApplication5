@@ -10,6 +10,13 @@ namespace WebApplication5.Controllers
     public class WeatherForecastController(StudyCommandService service, IEventStore eventStore) : ControllerBase
     {
 
+        [HttpGet]
+        public async Task<List<Study>> Get()
+        {
+
+            return [];
+        }
+
         [HttpGet("id")]
         public async Task<Study> Get(Guid id)
         {
