@@ -10,7 +10,7 @@ namespace WebApplication5.Projectors
     {
         public StudyProjector(NpgsqlDataSource source, IEventStore store) : base(source)
         {
-            On<StudyCreatedEvent>((connection, ctx) =>
+            On<StudyCreateRetranslatedEvent>((connection, ctx) =>
                 {
 
                     NpgsqlCommand command = connection.CreateCommand();
@@ -45,7 +45,7 @@ namespace WebApplication5.Projectors
                 return command;
             });
 
-            On<StudyDeletedEvent>((connection, ctx) =>
+            On<StudyDeleteRetranslatedEvent>((connection, ctx) =>
             {
                 NpgsqlCommand command = connection.CreateCommand();
                 command.CommandText = "delete from study where id = @Ids";

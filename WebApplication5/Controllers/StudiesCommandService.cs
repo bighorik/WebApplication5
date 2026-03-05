@@ -15,6 +15,11 @@ namespace WebApplication5.Controllers
                 .GetStream(command => new StreamName($"Studies"))
                 .Act((state, _, command) =>
                 {
+                    if (state.studies.Any(el => el.Value.Code == command.Code))
+                    {
+                        return [];
+                    }
+
                     StudyCreatedEvent @event = new StudyCreatedEvent()
                     {
                         Id = command.Id,
@@ -36,10 +41,11 @@ namespace WebApplication5.Controllers
                         return [];
                     }
 
-                    if (!state.studies.Any(study => study.Value.Code == command.Code))
+                    if (state.studies.Any(el => el.Value.Code == command.Code))
                     {
                         return [];
                     }
+
 
                     StudyCodeUpdatedEvent @event = new StudyCodeUpdatedEvent()
                     {
