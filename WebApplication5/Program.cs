@@ -9,6 +9,8 @@ using FluentMigrator.Runner;
 using Eventuous.EventStore.Subscriptions;
 using Eventuous.Postgresql.Subscriptions;
 using WebApplication5.Projectors;
+using EventStore.Client;
+using StreamSubscription = Eventuous.EventStore.Subscriptions.StreamSubscription;
 
 namespace WebApplication5
 {
@@ -41,6 +43,7 @@ namespace WebApplication5
             builder.Services.AddCheckpointStore<PostgresCheckpointStore>();
 
             builder.Services.AddCommandService<StudyCommandService, StudyState>();
+            builder.Services.AddCommandService<StudiesCommandService, StudiesState>();
             TypeMap.RegisterKnownEventTypes(typeof(StudyCreatedEvent).Assembly);
 
             builder.Services.AddSubscription<StreamSubscription, StreamSubscriptionOptions>("StudyProjectorSubscription",
@@ -53,6 +56,16 @@ namespace WebApplication5
                 .UseCheckpointStore<PostgresCheckpointStore>()
                 .AddEventHandler<StudyProjector>());
 
+
+            builder.Services.AddSubscription<StreamPersistentSubscription, StreamPersistentSubscriptionOptions>("StudyPersistentSubscription",
+                builder => builder
+                .Configure(subscriptionOptions =>
+                {
+                    subscriptionOptions.StreamName = new StreamName("Studies");
+                    subscriptionOptions.ResolveLinkTos = true;
+                    subscriptionOptions.SubscriptionSettings = new PersistentSubscriptionSettings(resolveLinkTos: true, StreamPosition.Start);
+                })
+                .AddEventHandler<StudyRetranslateHandler>());
 
             var app = builder.Build();
 

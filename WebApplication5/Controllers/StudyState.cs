@@ -17,7 +17,7 @@ namespace WebApplication5.Controllers
 
         public StudyState()
         {
-            On<StudyCreatedEvent>((state, @event) =>
+            On<StudyCreateRetranslatedEvent>((state, @event) =>
             {
                 state.Id = @event.Id;
                 state.Name = @event.Name;
@@ -35,14 +35,14 @@ namespace WebApplication5.Controllers
                 return state;
             });
 
-            On<StudyCodeUpdatedEvent>((state, @event) =>
+            On<StudyCodeUpdateRetranslatedEvent>((state, @event) =>
             {
                 state.Code = @event.Code;
 
                 return state;
             });
 
-            On<StudyDeletedEvent>((state, @event) =>
+            On<StudyDeleteRetranslatedEvent>((state, @event) =>
             {
                 state.IsDeleted = true;
 

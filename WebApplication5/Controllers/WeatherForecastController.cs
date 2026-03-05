@@ -7,7 +7,7 @@ namespace WebApplication5.Controllers
 {
     [ApiController]
     [Route("/api/study")]
-    public class WeatherForecastController(StudyCommandService service, IEventStore eventStore) : ControllerBase
+    public class WeatherForecastController(StudyCommandService service, StudiesCommandService studiesService, IEventStore eventStore) : ControllerBase
     {
 
         [HttpGet]
@@ -31,8 +31,8 @@ namespace WebApplication5.Controllers
             CreateStudyCommand command = dto.Adapt<CreateStudyCommand>();
             command.Id = Guid.NewGuid();
 
-            Result<StudyState> result = await service.Handle(command, default);
-            Study study = result.Get()!.State.Adapt<Study>();
+            Result<StudiesState> result = await studiesService.Handle(command, default);
+            Study study = result.Get()!.State.studies[command.Id].Adapt<Study>();
             return study;
         }
 
@@ -46,7 +46,9 @@ namespace WebApplication5.Controllers
                 Phase = dto.Phase,
             };
 
-            return (await service.Handle(command, default)).Get()!.State.Adapt<Study>();
+            Result<StudyState> result = await service.Handle(command, default);
+            Study study = result.Get()!.State.Adapt<Study>();
+            return study;
         }
 
         [HttpPut("{id}/code")]
@@ -57,8 +59,9 @@ namespace WebApplication5.Controllers
                 Id = id,
                 Code = dto.Code,
             };
-
-            return (await service.Handle(command, default)).Get()!.State.Adapt<Study>();
+            Result<StudiesState> result = await studiesService.Handle(command, default);
+            Study study = result.Get()!.State.studies[command.Id].Adapt<Study>();
+            return study;
         }
 
         [HttpDelete("{id}")]

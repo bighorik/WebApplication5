@@ -10,12 +10,12 @@ namespace WebApplication5.Controllers
     {
         public StudyCommandService(IEventStore store) : base(store)
         {
-            On<CreateStudyCommand>()
+            On<RetranclateCreateStudyCommand>()
                 .InState(ExpectedState.New)
                 .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
                 {
-                    StudyCreatedEvent @event = new StudyCreatedEvent()
+                    StudyCreateRetranslatedEvent @event = new StudyCreateRetranslatedEvent()
                     {
                         Id = command.Id,
                         Name = command.Name,
@@ -50,7 +50,7 @@ namespace WebApplication5.Controllers
                     return [@event];
                 });
 
-            On<UpdateStudyCodeCommand>()
+            On<RetranclateUpdateStudyCodeCommand>()
                 .InState(ExpectedState.Existing)
                 .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
@@ -65,7 +65,7 @@ namespace WebApplication5.Controllers
                         return [];
                     }
 
-                    StudyCodeUpdatedEvent @event = new StudyCodeUpdatedEvent()
+                    StudyCodeUpdateRetranslatedEvent @event = new StudyCodeUpdateRetranslatedEvent()
                     {
                         Code = command.Code,
                     };
@@ -74,7 +74,7 @@ namespace WebApplication5.Controllers
                 });
 
 
-            On<DeleteStudyCommand>()
+            On<RetranclateDeleteStudyCommand>()
                 .InState(ExpectedState.Existing)
                 .GetStream(command => new StreamName($"Study-{command.Id}"))
                 .Act((state, _, command) =>
@@ -84,7 +84,7 @@ namespace WebApplication5.Controllers
                         return [];
                     }
 
-                    return [new StudyDeletedEvent()];
+                    return [new StudyDeleteRetranslatedEvent()];
                 });
         }
     }
